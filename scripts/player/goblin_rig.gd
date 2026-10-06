@@ -71,14 +71,14 @@ var back_anchor: Node3D
 var front_anchor: Node3D
 
 # --- Springs ---------------------------------------------------------------
-var s_pitch := Spring.new(70.0, 7.0)
-var s_roll := Spring.new(70.0, 5.5)
+var s_pitch := Spring.new(110.0, 12.0)
+var s_roll := Spring.new(110.0, 11.0)
 var s_squash := Spring.new(260.0, 9.0)
 var s_head_yaw := Spring.new(90.0, 7.0)
 var s_head_pitch := Spring.new(110.0, 8.0)
-var s_head_roll := Spring.new(55.0, 3.5)
-var s_ear_l := Spring.new(80.0, 3.5)
-var s_ear_r := Spring.new(80.0, 3.5)
+var s_head_roll := Spring.new(80.0, 7.0)
+var s_ear_l := Spring.new(90.0, 5.0)
+var s_ear_r := Spring.new(90.0, 5.0)
 var s_cap := Spring.new(60.0, 4.0)
 var s_arm_lx := Spring.new(160.0, 11.0)
 var s_arm_lz := Spring.new(160.0, 11.0)
@@ -211,14 +211,9 @@ func _build() -> void:
 	k.box(MeshKit.at(Vector3(0.05, 0.035, -0.012)), Vector3(0.04, 0.045, 0.03), TOOTH)
 	_part(mouth, k.commit())
 
-	# Oversized courier cap.
+	# Oversized hat (courier cap by default; gear can swap it).
 	cap = _pivot(head, Vector3(0, 0.25, 0.02), "Cap")
-	k = MeshKit.new(18)
-	k.cylinder(MeshKit.rot(Vector3(0, 0.07, 0), Vector3(-0.08, 0, 0)), 0.32, 0.29, 0.17, CAP, 10)
-	k.cylinder(MeshKit.rot(Vector3(0, 0.0, 0), Vector3(-0.08, 0, 0)), 0.335, 0.335, 0.04, CAP_DARK, 10)
-	k.box(MeshKit.rot(Vector3(0, -0.005, -0.38), Vector3(0.12, 0, 0)), Vector3(0.42, 0.03, 0.24), CAP_DARK)
-	k.box(MeshKit.rot(Vector3(0, 0.09, -0.3), Vector3(-0.3, 0, 0)), Vector3(0.11, 0.08, 0.02), VEST_TRIM)
-	_part(cap, k.commit())
+	set_hat(hat_style)
 
 	# Noodle arms with big hands.
 	for side in [-1.0, 1.0]:
@@ -254,6 +249,37 @@ func _build() -> void:
 			leg_r = leg
 	s_foot_l.snap(foot_l.position)
 	s_foot_r.snap(foot_r.position)
+
+
+var hat_style := "cap"
+
+
+func set_hat(style: String) -> void:
+	hat_style = style
+	if cap == null:
+		return
+	for c in cap.get_children():
+		c.queue_free()
+	var k := MeshKit.new(18)
+	match style:
+		"pot":
+			k.cylinder(MeshKit.at(Vector3(0, 0.1, 0)), 0.36, 0.33, 0.28, Color(0.45, 0.45, 0.5), 10)
+			k.box(MeshKit.at(Vector3(0.42, 0.12, 0)), Vector3(0.18, 0.05, 0.06), Color(0.3, 0.3, 0.32))
+		"wizard":
+			k.cylinder(MeshKit.at(Vector3(0, 0.0, 0)), 0.5, 0.5, 0.04, Color(0.3, 0.25, 0.7), 10)
+			k.cylinder(MeshKit.rot(Vector3(0.05, 0.35, 0.05), Vector3(0.25, 0, -0.2)), 0.3, 0.0, 0.75, Color(0.3, 0.25, 0.7), 8)
+			k.sphere(MeshKit.at(Vector3(0.0, 0.25, -0.24)), 0.05, Color(1, 0.9, 0.3), 5, 3)
+		"crown":
+			k.cylinder(MeshKit.at(Vector3(0, 0.06, 0)), 0.2, 0.22, 0.12, Color(1, 0.8, 0.25), 8, false)
+			for i in 5:
+				var a := TAU * i / 5.0
+				k.cylinder(MeshKit.at(Vector3(cos(a) * 0.19, 0.17, sin(a) * 0.19)), 0.05, 0.0, 0.12, Color(1, 0.8, 0.25), 4)
+		_:
+			k.cylinder(MeshKit.rot(Vector3(0, 0.07, 0), Vector3(-0.08, 0, 0)), 0.32, 0.29, 0.17, CAP, 10)
+			k.cylinder(MeshKit.rot(Vector3(0, 0.0, 0), Vector3(-0.08, 0, 0)), 0.335, 0.335, 0.04, CAP_DARK, 10)
+			k.box(MeshKit.rot(Vector3(0, -0.005, -0.38), Vector3(0.12, 0, 0)), Vector3(0.42, 0.03, 0.24), CAP_DARK)
+			k.box(MeshKit.rot(Vector3(0, 0.09, -0.3), Vector3(-0.3, 0, 0)), Vector3(0.11, 0.08, 0.02), VEST_TRIM)
+	_part(cap, k.commit())
 
 
 # ===========================================================================
@@ -376,7 +402,7 @@ func _animate(dt: float) -> void:
 	# --- Gait ---------------------------------------------------------------
 	var target_gait := clampf(speed / 1.2, 0.0, 1.0) if grounded else 0.0
 	gait = lerpf(gait, target_gait, 1.0 - exp(-10.0 * dt))
-	var stride := lerpf(0.55, 1.15, speed_n)
+	var stride := lerpf(0.5, 0.8, speed_n)  # quick little goblin steps
 	if grounded:
 		phase += speed * dt / stride * PI
 		var step_sign := signf(sin(phase))
@@ -401,11 +427,11 @@ func _animate(dt: float) -> void:
 	var roll_t := -acc_r * 0.034
 	roll_t += sin(phase) * 0.07 * gait  # waddle
 	var wob := _noise.get_noise_1d(time * 1.3)
-	roll_t += wob * 0.07 * (1.0 - gait)
-	pitch_t += _noise.get_noise_1d(time * 1.1 + 50.0) * 0.04 * (1.0 - gait)
-	roll_t += balance * sin(time * 8.5) * 0.22
-	pitch_t += balance * sin(time * 6.1) * 0.1
-	roll_t += stumble * sin(time * 7.0) * 0.4
+	roll_t += (wob * 0.02 + sin(time * 0.7) * 0.03) * (1.0 - gait)  # gentle weight shift
+	pitch_t += _noise.get_noise_1d(time * 1.1 + 50.0) * 0.012 * (1.0 - gait)
+	roll_t += balance * sin(time * 8.5) * 0.1
+	pitch_t += balance * sin(time * 6.1) * 0.05
+	roll_t += stumble * sin(time * 14.0) * 0.25
 	pitch_t -= stumble * 0.25
 	if g.skidding:
 		pitch_t = 0.5
@@ -415,9 +441,9 @@ func _animate(dt: float) -> void:
 		roll_t += sin(time * 5.0) * 0.35
 	pitch_t = clampf(pitch_t, -0.7, 0.6)
 	roll_t = clampf(roll_t, -0.7, 0.7)
-	var stiff := 1.0 if _getup_t < 0.0 else 0.55
-	s_pitch.stiffness = 70.0 * stiff
-	s_roll.stiffness = 70.0 * stiff
+	var stiff := 1.0 if _getup_t < 0.0 else 0.6
+	s_pitch.stiffness = 110.0 * stiff
+	s_roll.stiffness = 110.0 * stiff
 	lean.rotation = Vector3(s_pitch.step(pitch_t, dt), 0, s_roll.step(roll_t, dt))
 
 	# --- Squash & stretch ---------------------------------------------------

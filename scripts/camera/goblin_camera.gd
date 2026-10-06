@@ -135,7 +135,7 @@ func _process(delta: float) -> void:
 
 	# Distance / FOV react to sprinting and huge packages.
 	var sprint := target.sprinting and speed > 6.0
-	var want_dist := base_distance + (0.9 if sprint else 0.0) + (1.6 if target.carrier.blocks_view() else 0.0) + (1.0 if ragdolled else 0.0)
+	var want_dist := (4.2 if GameState.indoors else base_distance) + (0.9 if sprint else 0.0) + (1.6 if target.carrier.blocks_view() else 0.0) + (1.0 if ragdolled else 0.0)
 	_distance = lerpf(_distance, want_dist, 1.0 - exp(-3.0 * dt))
 	_arm.spring_length = _distance
 	_fov = lerpf(_fov, 76.0 if sprint else 70.0, 1.0 - exp(-4.0 * dt))

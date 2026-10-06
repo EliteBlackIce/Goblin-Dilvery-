@@ -35,6 +35,7 @@ changes your movement. **X** sets off an explosion, **T** trips you, **R** reset
 | Camera | Mouse | Right stick |
 | Sprint | Shift | L3 / LB |
 | Jump (mash it while ragdolled to get up faster) | Space | A |
+| Sneak (enemies notice you less) | just walk, don't sprint | – |
 | Satchel bonk | F / left click | RB / B |
 | Interact / deliver | E | X |
 | Map | M | Back |
@@ -75,6 +76,28 @@ wealthy, goblin-run, farm, abandoned, bandit-controlled). The dungeon is a
 graph of rooms, and the package recipient is unfortunately inside it.
 Deliveries chain into routes. Terrain streams in as 32 m chunks around the
 player, with MultiMesh-instanced vegetation.
+
+## Home base and progression
+
+- **Post office.** Walk in through the front door; the roof hides while you're inside so the camera can see you.
+  - **Delivery counter and mission board:** contracts. Normal contracts are open to everyone, dangerous ones need reputation 2, and special ones need reputation 3 plus the Brass Counter upgrade.
+  - **Quartermaster's shop:** gear, furniture and building materials.
+  - **Upgrade desk:** building upgrades.
+  - **Storage chest:** unloads your backpack.
+  - **Personal room:** furniture spots, a decorating catalogue, a trophy shelf for collectibles, and a bed that heals you and saves.
+- **Building upgrades physically add to the building:**
+  - Storage Annex (more storage space)
+  - Gadget Workshop (unlocks gadgets in the shop)
+  - Bedroom Extension (4 more furniture spots)
+  - Brass Counter (+15% delivery pay, unlocks special contracts)
+- **Contracts** have tiers and optional bonus goals (deliver in time, keep it pristine, don't get hit). They pay gold, reputation and items, and many offer a guaranteed item reward.
+- **Packages:**
+  - Cursed and valuable parcels make enemies notice you from further away.
+  - Floating parcels make you lighter and floatier.
+  - Living parcels can escape.
+  - Bandits and ragdolls can knock parcels off you; press E to grab them back.
+- **Gear slots:** pack, boots, gloves, gadget and hat. Each piece changes gameplay, for example more parcel slots, higher jumps, gentler handling of fragile parcels, sneaking, or chest markers on the map.
+- **Saving.** Progress saves automatically to `user://goblin_save.json`: gold, reputation, items, gear, furniture, upgrades, and per-world progress. It saves after deliveries and purchases, when you enter the post office, when you rest in bed, and when you quit. The title screen has **Continue**, and starting a new world keeps your goblin's progress.
 
 ## Tests
 

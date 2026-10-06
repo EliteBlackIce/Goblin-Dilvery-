@@ -161,7 +161,7 @@ func _physics_process(delta: float) -> void:
 			var wd := _wander - global_position
 			wd.y = 0
 			hv = hv.move_toward(wd.normalized() * speed * 0.35 if wd.length() > 0.6 else Vector3.ZERO, 10.0 * delta)
-			if dist < def["aggro"] and player_ok:
+			if dist < def["aggro"] * player.noise() and player_ok:
 				_go(S.CHASE)
 				_squash.kick(5.0)
 		S.CHASE:
@@ -213,6 +213,9 @@ func _physics_process(delta: float) -> void:
 				if not _hit_done and _state_t > 0.06 and dist < def["range"] + 0.5 and player_ok:
 					_hit_done = true
 					player.take_hit(dir, def["force"], def["damage"])
+					# Bandits go for the goods.
+					if type_id == "bandit" and not player.carrier.packages.is_empty() and randf() < 0.35:
+						player.carrier.drop_one("A bandit knocked a parcel loose! Grab it!")
 				if _state_t > 0.3:
 					_go(S.RECOVER)
 		S.RECOVER:

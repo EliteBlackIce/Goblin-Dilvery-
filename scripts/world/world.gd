@@ -114,7 +114,7 @@ func spawn_placement(p: Dictionary, parent: Node3D) -> void:
 	var node: Node3D = null
 	match kind:
 		"piece", "building":
-			node = PieceLibrary.spawn(p["piece"], d)
+			node = PostOffice.new() if p.get("piece", "") == "post_office" else PieceLibrary.spawn(p["piece"], d)
 		"signpost":
 			node = PieceLibrary.spawn("signpost", d)
 		"npc":
@@ -175,6 +175,41 @@ func spawn_placement(p: Dictionary, parent: Node3D) -> void:
 	node.position = pos
 	node.rotation.y = yaw
 	parent.add_child(node)
+
+
+## Stranded villager event: their cart broke, so they hire you on the spot.
+func stranded_help(v: Villager) -> void:
+	var nid: String = v.npc["id"]
+	if GameState.is_consumed(nid):
+		v.say("Thanks again! I'll walk. Slowly. Forever.")
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = nid.hash()
+	var targets: Array = []
+	for s in data.sites:
+		if s["kind"] == "village" or s["kind"] == "hamlet":
+			targets.append_array(s["npcs"])
+	if targets.is_empty():
+		return
+	var npc: Dictionary = targets[rng.randi_range(0, targets.size() - 1)]
+	var site := data.site(npc["site"])
+	var pkg: String = ["heavy", "fragile", "living", "huge"][rng.randi_range(0, 3)]
+	var dist := Vector2(v.global_position.x - npc["pos"].x, v.global_position.z - npc["pos"].z).length()
+	var job := {
+		"id": "help_" + nid, "from": "", "to": npc["site"], "from_name": "the roadside", "to_name": site.get("name", "?"),
+		"recipient_id": npc["id"], "recipient_name": npc["name"], "sender_name": v.npc["name"],
+		"package": pkg, "item": WorldRng.pick(rng, PackageTypes.get_def(pkg)["items"]), "distance": dist, "danger": 0.3,
+		"reward": int(30 + dist * 0.08), "status": "available", "note": "Rescued from a broken cart.", "chain": "", "leg": 0,
+		"tier": "dangerous", "min_rep": 1, "reward_item": Items.roll(rng, "good"), "time_limit": round(dist / 4.5 + 40.0),
+		"objectives": [{"type": "time", "label": "Deliver before they worry", "bonus": 25}],
+	}
+	if not GameState.player.carrier.can_take(pkg):
+		v.say("You look a bit full. Come back with free hands?")
+		return
+	GameState.add_runtime_job(job)
+	if GameState.accept_job(job["id"]):
+		GameState.consume(nid)
+		v.say("Oh bless you! Please take this to %s in %s. Hurry!" % [npc["name"], site.get("name", "town")])
 
 
 func _lost_package(id: String, d: Dictionary) -> Node3D:

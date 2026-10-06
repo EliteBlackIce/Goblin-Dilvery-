@@ -30,14 +30,14 @@ const MASK_PLAYER := 1 | 4 | 8
 @export var walk_speed := 5.2
 @export var sprint_speed := 9.0
 @export var ground_accel := 32.0
-@export var sprint_accel := 14.0
-@export var stop_decel := 17.0
+@export var sprint_accel := 24.0
+@export var stop_decel := 30.0
 @export var air_accel := 10.0
 @export_group("Turning / momentum")
-@export var walk_turn_rate := 14.0
-@export var sprint_turn_rate := 4.0
-@export var body_turn_speed := 13.0
-@export var skid_angle := 2.2
+@export var walk_turn_rate := 18.0
+@export var sprint_turn_rate := 9.0
+@export var body_turn_speed := 16.0
+@export var skid_angle := 2.4
 @export_group("Jumping")
 @export var gravity := 26.0
 @export var fall_gravity_mult := 1.5
@@ -47,8 +47,8 @@ const MASK_PLAYER := 1 | 4 | 8
 @export var jump_buffer := 0.14
 @export_group("Clumsiness")
 @export var stumble_threshold := 0.6
-@export var land_stumble_impact := 17.0
-@export var land_ragdoll_impact := 25.0
+@export var land_stumble_impact := 20.0
+@export var land_ragdoll_impact := 28.0
 @export var hit_ragdoll_force := 11.0
 @export var random_trip_chance := 0.012
 @export var trip_cooldown_time := 25.0
@@ -119,6 +119,8 @@ func _ready() -> void:
 	rig = GoblinRig.new()
 	rig.name = "Rig"
 	rig.goblin = self
+	if GameState.equipped.has("hat"):
+		rig.hat_style = Items.get_item(GameState.equipped["hat"]).get("hat", "cap")
 	add_child(rig)
 	rig.footstep.connect(_on_footstep)
 
@@ -194,7 +196,7 @@ func _tick_movement(delta: float) -> void:
 	sprinting = can_act and Input.is_action_pressed("sprint") and input_strength > 0.3
 	var max_speed: float = (sprint_speed if sprinting else walk_speed) * mods["speed"] * GameState.stat("speed")
 	if state == State.STUMBLE:
-		max_speed = minf(max_speed, walk_speed * 0.9)
+		max_speed = minf(max_speed, walk_speed * 1.2)
 
 	var hv := Vector3(velocity.x, 0, velocity.z)
 	var speed := hv.length()
@@ -207,7 +209,7 @@ func _tick_movement(delta: float) -> void:
 			if speed > 0.6:
 				var cur_dir := hv / speed
 				var ang := cur_dir.signed_angle_to(target_dir, Vector3.UP)
-				if absf(ang) > skid_angle and speed > 5.5:
+				if absf(ang) > skid_angle and speed > 7.5:
 					# Reversing at speed: skid, flail, kick up dust.
 					skidding = true
 					hv = hv.move_toward(Vector3.ZERO, stop_decel * 1.4 * delta)
@@ -225,7 +227,6 @@ func _tick_movement(delta: float) -> void:
 					var accel: float = (sprint_accel if speed > walk_speed else ground_accel) * mods["accel"]
 					var new_speed := move_toward(speed, target_speed, accel * delta)
 					hv = cur_dir * new_speed
-					balance += absf(step) * speed * 0.009 * (1.0 + mods["instability"] * 3.0) / stability
 			else:
 				hv = hv.move_toward(target_dir * target_speed, ground_accel * mods["accel"] * delta)
 		else:
@@ -234,11 +235,6 @@ func _tick_movement(delta: float) -> void:
 		if input_strength > 0.05:
 			var target := wish_dir * maxf(max_speed, speed)
 			hv = hv.move_toward(target, air_accel * delta)
-
-	# Stumbling: a drunken sideways sway on top of the player's steering.
-	if stumble_amount > 0.0 and speed > 0.5:
-		var side := Vector3(-hv.z, 0, hv.x).normalized()
-		hv += side * sin(_time * 7.0) * stumble_amount * 6.0 * delta
 
 	_was_skidding = skidding
 	velocity.x = hv.x
@@ -260,7 +256,7 @@ func _tick_movement(delta: float) -> void:
 		_coyote_t = 0.0
 		jumped = true
 		rig.on_jump()
-	_apply_gravity(delta, jumped)
+	_apply_gravity(delta, jumped, mods["gravity"])
 
 	# --- Move --------------------------------------------------------------
 	var pre_vy := velocity.y
@@ -271,15 +267,17 @@ func _tick_movement(delta: float) -> void:
 
 	if grounded and not was_grounded:
 		_on_landed(-pre_vy)
+	_check_bump(hv)
+	_check_hard_stop(hv, input_strength)
 	if grounded:
 		_air_time = 0.0
 	else:
 		_air_time += delta
 
 	# Tumbling down something too steep to stand on.
-	if not grounded and is_on_wall() and velocity.y < -5.0:
+	if not grounded and is_on_wall() and velocity.y < -9.0:
 		_wall_slide_t += delta
-		if _wall_slide_t > 0.35:
+		if _wall_slide_t > 0.6:
 			var down := get_wall_normal()
 			down.y = 0
 			start_ragdoll(down.normalized() * 4.0 + Vector3.DOWN * 2.0, 7.0)
@@ -324,10 +322,10 @@ func _tick_movement(delta: float) -> void:
 			last_safe_pos = global_position
 
 
-func _apply_gravity(delta: float, jumped: bool) -> void:
+func _apply_gravity(delta: float, jumped: bool, gravity_mult := 1.0) -> void:
 	if grounded and not jumped:
 		return
-	var g := gravity
+	var g := gravity * gravity_mult
 	if velocity.y < 0.0:
 		g *= fall_gravity_mult
 	elif not Input.is_action_pressed("jump") or GameState.input_locked:
@@ -335,41 +333,20 @@ func _apply_gravity(delta: float, jumped: bool) -> void:
 	velocity.y = maxf(velocity.y - g * delta, -max_fall_speed)
 
 
-func _update_balance(delta: float, mods: Dictionary, stability: float, speed: float) -> void:
-	var instab: float = mods["instability"]
-	# Wobbly packages keep nudging you while you move.
-	if speed > 1.0 and grounded:
-		balance += instab * 0.11 * clampf(speed / sprint_speed, 0.0, 1.0) * (0.6 + 0.4 * sin(_time * 3.1)) * delta / stability
-	var decay := 0.5 if speed > 0.5 else 0.85
-	balance = maxf(0.0, balance - decay * delta)
-
+func _update_balance(delta: float, _mods: Dictionary, _stability: float, _speed: float) -> void:
+	# Balance only builds from real events (hits, hard landings); it never
+	# nudges you around on its own, so normal control is always reliable.
+	balance = maxf(0.0, balance - 1.2 * delta)
 	if state == State.STUMBLE:
 		_stumble_t -= delta
-		stumble_amount = clampf(_stumble_t / 0.5, 0.0, 1.0)
+		stumble_amount = clampf(_stumble_t / 0.35, 0.0, 1.0)
 		if _stumble_t <= 0.0:
 			state = State.NORMAL
 			stumble_amount = 0.0
 	else:
-		stumble_amount = move_toward(stumble_amount, 0.0, delta * 3.0)
-
+		stumble_amount = move_toward(stumble_amount, 0.0, delta * 4.0)
 	if balance >= 1.0:
 		trip()
-		return
-	if balance >= stumble_threshold and state == State.NORMAL:
-		start_stumble(0.8)
-		balance *= 0.55
-
-	# Occasional trips while sprinting. Rare, short, never during platforming,
-	# mostly just near-misses — and scaled by the Clumsiness setting.
-	if sprinting and grounded and state == State.NORMAL and _trip_cd <= 0.0:
-		var chance: float = random_trip_chance * (1.0 + instab * 3.0) * GameState.clumsiness
-		if randf() < chance * delta:
-			_trip_cd = trip_cooldown_time
-			if randf() < 0.25 + instab * 0.2:
-				trip()
-			else:
-				start_stumble(1.0)
-				rig.set_expression("panic", 0.8)
 
 
 static func _approach_angle(from: float, to: float, max_step: float) -> float:
@@ -384,7 +361,7 @@ func _on_landed(impact: float) -> void:
 	if impact > 10.0:
 		camera_shake.emit(clampf((impact - 10.0) / 22.0, 0.0, 0.55))
 		FX.dust(global_position, clampf(impact / 12.0, 0.6, 2.2))
-	var stability: float = GameState.stat("stability")
+	var stability: float = GameState.stat("stability") * GameState.stat("landing")
 	if impact > land_ragdoll_impact * stability:
 		var fwd := Vector3(-sin(facing_yaw), 0, -cos(facing_yaw))
 		if impact > 30.0:
@@ -394,6 +371,42 @@ func _on_landed(impact: float) -> void:
 	elif impact > land_stumble_impact * stability:
 		balance += 0.25 + (impact - land_stumble_impact) * 0.05
 		start_stumble(0.7)
+
+
+var _bump_cd := 0.0
+var _was_fast := false
+
+
+## Running face-first into a wall: a little "bonk!" bounce, not a control loss.
+func _check_bump(hv: Vector3) -> void:
+	_bump_cd -= get_physics_process_delta_time()
+	if _bump_cd > 0.0 or not is_on_wall() or hv.length() < 5.5:
+		return
+	var n := get_wall_normal()
+	n.y = 0.0
+	if n.length() < 0.5 or hv.normalized().dot(-n.normalized()) < 0.7:
+		return
+	_bump_cd = 0.8
+	velocity.x = n.x * 3.0
+	velocity.z = n.z * 3.0
+	rig.on_hit(n, 3.0)
+	rig.set_expression("ouch", 0.5)
+	camera_kick.emit(n, 0.3)
+	start_stumble(0.35)
+	FX.dust(global_position + Vector3.UP * 0.8 - n * 0.4, 0.7)
+
+
+## Letting go of the stick at a sprint: a quick cartoon foot-slide.
+func _check_hard_stop(hv: Vector3, input_strength: float) -> void:
+	var fast := hv.length() > 7.0 and grounded
+	if _was_fast and input_strength < 0.05 and grounded and hv.length() > 3.0:
+		rig.on_skid()
+		FX.dust(global_position, 0.8)
+		_was_fast = false
+	elif fast:
+		_was_fast = true
+	elif hv.length() < 1.0:
+		_was_fast = false
 
 
 func _push_rigid_bodies(hv: Vector3) -> void:
@@ -431,6 +444,11 @@ func trip() -> void:
 	GameState.toast(WorldText.pick_trip_line(), Color(1, 0.9, 0.6))
 
 
+## How noticeable the goblin is to enemies (sneaking = walking, no loud parcels).
+func noise() -> float:
+	return (1.3 if sprinting else 0.8) * carrier.get_modifiers()["noise"] * GameState.stat("noise")
+
+
 func is_busy() -> bool:
 	return state != State.NORMAL or not grounded
 
@@ -440,6 +458,9 @@ func take_hit(dir: Vector3, force: float, damage: int) -> void:
 	if _invuln_t > 0.0 or state == State.RAGDOLL:
 		return
 	_invuln_t = 0.6
+	GameState.note_hit()
+	if GameState.stat_add("armor") > 0.0 and randf() < 0.5:
+		damage = maxi(0, damage - 1)  # the pot helmet goes BONG
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length_squared() > 0.0001 else Vector3(-sin(facing_yaw), 0, -cos(facing_yaw)) * -1.0
 	take_damage(damage)
@@ -548,7 +569,7 @@ func _end_ragdoll() -> void:
 	rig.reset_pose()
 	rig.play_getup()
 	state = State.RECOVERING
-	_recover_t = 0.6
+	_recover_t = 0.45 / GameState.stat("recovery")
 	ragdoll_ended.emit()
 	if health <= 0:
 		_knock_out()

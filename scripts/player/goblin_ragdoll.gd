@@ -161,13 +161,13 @@ func tick(delta: float, steer: Vector3, wiggle_pressed: bool) -> void:
 func is_settled() -> bool:
 	if elapsed > 9.0:
 		return true  # hard cap, whatever is going on
-	var min_time := maxf(0.7, 1.1 - mash * 0.3)
+	var min_time := maxf(0.4, 0.8 - mash * 0.3) / GameState.stat("recovery")
 	if elapsed < min_time:
 		return false
-	if _still_time > maxf(0.15, 0.5 - mash * 0.2):
+	if _still_time > maxf(0.1, 0.3 - mash * 0.2):
 		return true
 	# Mashing / timeout only gets you up once you've stopped flying through the air.
-	return (mash >= 2.5 or elapsed > 4.5) and torso.linear_velocity.length() < 2.5
+	return (mash >= 2.0 or elapsed > 3.0) and torso.linear_velocity.length() < 2.5
 
 
 func center() -> Vector3:

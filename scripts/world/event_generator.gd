@@ -10,6 +10,7 @@ const ROAD_PREF := {
 	"lost_package": ["trail", "main", "shortcut"],
 	"broken_cart": ["main", "trail"],
 	"rival_courier": ["main"],
+	"stranded_villager": ["trail", "shortcut", "main"],
 }
 
 
@@ -72,6 +73,11 @@ static func _spawn(w: WorldData, rng: RandomNumberGenerator, ev: Dictionary, p: 
 				var t := "explosive_barrel" if k < 2 else "crate"
 				var q := _ground(w, cp + Vector3(rng.randf_range(-2, 2), 0, rng.randf_range(-2, 2))) + Vector3.UP * 0.6
 				w.add_placement({"id": "%s:prop%d" % [id, k], "kind": "prop", "pos": q, "yaw": rng.randf() * TAU, "data": {"type": t}})
+		"stranded_villager":
+			var sp := _ground(w, p + side * (hw + 2.2))
+			w.add_placement({"id": id + ":cart", "kind": "piece", "piece": "cart_broken", "pos": _ground(w, sp + along * 2.5), "yaw": yaw_along + 0.6, "data": {}})
+			var npc := _event_npc(rng, id + ":stranded", "stranded", sp, yaw_along, Color(0.4, 0.55, 0.75))
+			w.add_placement({"id": npc["id"], "kind": "npc", "pos": sp, "yaw": npc["yaw"], "data": npc})
 		"rival_courier":
 			var rp := _ground(w, p + side * (hw + 1.8))
 			var npc := _event_npc(rng, id + ":rival", "rival", rp, yaw_along, Color(0.75, 0.55, 0.1))

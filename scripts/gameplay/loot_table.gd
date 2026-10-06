@@ -19,7 +19,7 @@ static func trinket_ids() -> Array:
 
 
 static func roll_chest(rng: RandomNumberGenerator, biome: BiomeDef, tier: int) -> Dictionary:
-	var out := {"gold": rng.randi_range(5, 12) * tier, "potions": 0, "trinket": ""}
+	var out := {"gold": rng.randi_range(5, 12) * tier, "potions": 0, "item": ""}
 	for i in tier:
 		match WorldRng.pick_weighted(rng, biome.loot):
 			"gold":
@@ -27,8 +27,8 @@ static func roll_chest(rng: RandomNumberGenerator, biome: BiomeDef, tier: int) -
 			"potion":
 				out["potions"] += 1
 			"trinket":
-				if out["trinket"] == "":
-					out["trinket"] = WorldRng.pick(rng, trinket_ids())
-				else:
-					out["gold"] += 20
+				if out["item"] == "":
+					out["item"] = Items.roll(rng, ["common", "good", "rare"][clampi(tier - 1, 0, 2)])
+	if out["item"] == "" and tier >= 2 and rng.randf() < 0.6:
+		out["item"] = Items.roll(rng, "common" if tier == 2 else "good")
 	return out

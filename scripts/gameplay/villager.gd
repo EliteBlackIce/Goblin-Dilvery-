@@ -113,7 +113,7 @@ func _build() -> void:
 
 	var body := AnimatableBody3D.new()
 	body.sync_to_physics = false
-	body.collision_layer = 1
+	body.collision_layer = 4  # blocks the goblin, but not the camera
 	var cs := CollisionShape3D.new()
 	var cap := CapsuleShape3D.new()
 	cap.radius = 0.35
@@ -228,6 +228,10 @@ func get_interact_prompt(_g: Goblin) -> String:
 			return "Open the delivery board"
 		"merchant":
 			return "Buy a potion from %s (15 gold)" % name_
+		"quartermaster":
+			return "Shop with %s" % name_
+		"stranded":
+			return "Help %s" % name_
 	return "Talk to %s" % name_
 
 
@@ -253,6 +257,14 @@ func interact(g: Goblin) -> void:
 				FX.sparkle(g.global_position + Vector3.UP, Color(1, 0.4, 0.5))
 			else:
 				say("No gold, no potion. I'm a merchant, not a charity.")
+			return
+		"quartermaster":
+			GameState.home_requested.emit("shop")
+			say("Gear! Furniture! Planks! Everything a goblin could want.")
+			return
+		"stranded":
+			if world and world.has_method("stranded_help"):
+				world.stranded_help(self)
 			return
 		"rival":
 			say(WorldText.pick(["Hah! Slowpoke. I've delivered three parcels while you tripped over that one.",

@@ -179,6 +179,5 @@ static func _fill(r: Dictionary, rng: RandomNumberGenerator, biome: BiomeDef, np
 			c.append({"kind": "prop", "type": "crate", "pos": Vector3(-3.0, 0.5, -2.0)})
 		"secret":
 			var loot := LootTable.roll_chest(rng, biome, 3)
-			if loot["trinket"] == "":
-				loot["trinket"] = WorldRng.pick(rng, LootTable.trinket_ids())
+			loot["item"] = Items.roll(rng, "rare")
 			c.append({"kind": "chest", "pos": Vector3.ZERO, "loot": loot})

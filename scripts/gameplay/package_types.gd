@@ -34,7 +34,7 @@ const TYPES := {
 		"items": ["a seven-tier wedding cake", "a stack of loose plates", "a wobbling jelly sculpture"],
 	},
 	"magical": {
-		"name": "Magical Parcel", "weight": 0.0, "wobble": 0.0, "fragility": 0.2,
+		"name": "Floating Parcel", "weight": 0.0, "wobble": 0.0, "fragility": 0.2,
 		"size": Vector3(0.4, 0.4, 0.4), "carry": "float", "color": Color(0.62, 0.38, 0.95), "bonus": 14,
 		"items": ["a humming orb", "a bottled thunderstorm", "a grimoire that bites", "a teleporting hat"],
 	},
@@ -42,6 +42,16 @@ const TYPES := {
 		"name": "Explosive Parcel", "weight": 2.0, "wobble": 0.15, "fragility": 0.7,
 		"size": Vector3(0.45, 0.45, 0.45), "carry": "back", "color": Color(0.85, 0.22, 0.15), "bonus": 22,
 		"items": ["festival fireworks", "Definitely Not Explosives(tm)", "dragon pepper preserves", "a barrel of blasting powder"],
+	},
+	"cursed": {
+		"name": "Cursed Parcel", "weight": 1.5, "wobble": 0.1, "fragility": 0.3,
+		"size": Vector3(0.42, 0.42, 0.42), "carry": "back", "color": Color(0.35, 0.2, 0.45), "bonus": 26,
+		"items": ["a haunted music box", "a doll that blinks", "a jar of whispers", "a 'lucky' rabbit foot"],
+	},
+	"valuable": {
+		"name": "Valuable Parcel", "weight": 1.5, "wobble": 0.05, "fragility": 0.6,
+		"size": Vector3(0.4, 0.32, 0.4), "carry": "back", "color": Color(0.95, 0.8, 0.25), "bonus": 40,
+		"items": ["the Duke's signet ring", "a chest of gold coins", "a jewelled goose egg", "the town's tax money"],
 	},
 	"living": {
 		"name": "Living Package", "weight": 2.0, "wobble": 0.35, "fragility": 0.25,
@@ -89,6 +99,14 @@ static func build_mesh(type_id: String) -> ArrayMesh:
 				k.cylinder(MeshKit.rot(Vector3(0.02 * (i % 2), y + h * 0.5, 0), Vector3(0, 0, 0.05 * (i % 2 - 0.5))), w * 0.6, w * 0.55, h, col if i % 2 == 0 else Color(1, 0.95, 0.9), 8)
 				y += h
 			k.sphere(MeshKit.at(Vector3(0, y + 0.04, 0)), 0.05, Color(0.9, 0.1, 0.2), 6, 4)
+		"cursed":
+			k.box(Transform3D(), size, col)
+			k.box(MeshKit.rot(Vector3(0, 0, -size.z * 0.5 - 0.01), Vector3(0, 0, 0.785)), Vector3(0.3, 0.06, 0.01), Color(0.6, 1.0, 0.5))
+			k.box(MeshKit.rot(Vector3(0, 0, -size.z * 0.5 - 0.01), Vector3(0, 0, -0.785)), Vector3(0.3, 0.06, 0.01), Color(0.6, 1.0, 0.5))
+		"valuable":
+			k.box(Transform3D(), size, col)
+			k.box(MeshKit.at(Vector3(0, size.y * 0.5, 0)), Vector3(size.x + 0.02, 0.04, 0.08), Color(0.7, 0.15, 0.2))
+			k.sphere(MeshKit.at(Vector3(0, size.y * 0.5 + 0.05, 0)), 0.06, Color(0.7, 0.15, 0.2), 6, 4)
 		"magical":
 			k.box(MeshKit.rot(Vector3.ZERO, Vector3(0.6, 0.6, 0.0)), size, col)
 			k.sphere(MeshKit.at(Vector3.ZERO), size.x * 0.45, Color(0.9, 0.8, 1.0), 6, 4)

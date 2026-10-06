@@ -98,6 +98,20 @@ func _draw() -> void:
 			if s["kind"] == "village":
 				label += " (Post Office)"
 			draw_string(font, mp + Vector2(8, 4), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13 if not follow else 11, Color(1, 1, 1, 0.95))
+	# Exact recipient spots for parcels you carry, and chests if you own the compass.
+	for j in GameState.carried_jobs():
+		var npc := world.find_npc(j["recipient_id"])
+		if not npc.is_empty() and not npc.get("in_dungeon", false):
+			var rp := _to_map(npc["pos"], center)
+			if Rect2(Vector2.ZERO, size).has_point(rp):
+				draw_circle(rp, 4.0, Color(0, 0, 0))
+				draw_circle(rp, 3.0, Color(1, 0.9, 0.2))
+	if GameState.stat_add("compass") > 0.0:
+		for p in world.all_placements():
+			if p["kind"] == "chest" and not GameState.is_consumed(p["id"]):
+				var cp := _to_map(p["pos"], center)
+				if Rect2(Vector2.ZERO, size).has_point(cp):
+					draw_rect(Rect2(cp - Vector2(3, 3), Vector2(6, 6)), Color(1, 0.75, 0.1))
 	if player:
 		var pp := player.global_position
 		if world_node and world_node.in_dungeon:

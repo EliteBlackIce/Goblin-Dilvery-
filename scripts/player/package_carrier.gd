@@ -10,7 +10,6 @@ extends Node3D
 
 signal changed
 
-const MAX_PACKAGES := 5
 
 var goblin: Goblin
 var packages: Array = []  # of Dictionary: {job, type, def, integrity, node, spring, tilt, jolt_t}
@@ -21,8 +20,12 @@ func _ready() -> void:
 	top_level = true
 
 
+func max_packages() -> int:
+	return 3 + int(GameState.stat_add("parcels"))
+
+
 func has_room() -> bool:
-	return packages.size() < MAX_PACKAGES
+	return packages.size() < max_packages()
 
 
 func can_take(type_id: String) -> bool:
@@ -103,7 +106,7 @@ func blocks_view() -> bool:
 
 
 func get_modifiers() -> Dictionary:
-	var weight := total_weight()
+	var weight := total_weight() * GameState.stat("strength")
 	var capacity := 9.0 * GameState.stat("carry")
 	var overloaded := weight > capacity
 	var wobble := 0.0
@@ -117,7 +120,15 @@ func get_modifiers() -> Dictionary:
 		"instability": wobble + weight * 0.03 + (0.6 if overloaded else 0.0),
 		"weight": weight,
 		"overloaded": overloaded,
+		"gravity": 1.0,
+		"noise": 1.0,
 	}
+	for p in packages:
+		if p["type"] == "magical":
+			m["gravity"] *= 0.62 / GameState.stat("float")  # it pulls you upward!
+			m["jump"] *= 1.15
+		elif p["type"] in ["cursed", "valuable"]:
+			m["noise"] *= 1.7  # enemies smell it from far away
 	if overloaded:
 		m["speed"] *= 0.75
 	return m
@@ -143,6 +154,36 @@ func on_hit(force: float) -> void:
 
 func on_ragdoll() -> void:
 	_damage_all(0.22, "ragdoll")
+	if not packages.is_empty() and randf() < 0.6:
+		drop_one("Your parcel went flying! Go grab it.")
+
+
+## Knocks the top back-stack parcel off into the world as a physical object.
+func drop_one(msg: String, escaping := false) -> void:
+	for i in range(packages.size() - 1, -1, -1):
+		var p: Dictionary = packages[i]
+		if p["def"]["carry"] == "front" and not escaping:
+			continue
+		var node: Node3D = p["node"]
+		var dp := DroppedPackage.new()
+		dp.data = p
+		dp.escaping = escaping
+		goblin.get_parent().add_child(dp)
+		dp.global_position = node.global_position + Vector3.UP * 0.3
+		dp.linear_velocity = goblin.velocity * 0.5 + Vector3(randf_range(-3, 3), 4.5, randf_range(-3, 3))
+		node.queue_free()
+		packages.remove_at(i)
+		changed.emit()
+		GameState.toast(msg, Color(1, 0.8, 0.5))
+		return
+
+
+## Picks a dropped parcel back up (keeps its job, integrity and timer).
+func restore(p: Dictionary) -> void:
+	var job: Dictionary = p["job"]
+	add_package(job)
+	packages[packages.size() - 1]["integrity"] = p["integrity"]
+	changed.emit()
 
 
 func on_bonk() -> void:
@@ -158,6 +199,9 @@ func _damage_all(amount: float, cause: String) -> void:
 
 
 func _damage(p: Dictionary, amount: float, _cause: String) -> void:
+	amount *= GameState.stat("package_damage")
+	if p["type"] in ["fragile", "valuable"]:
+		amount *= GameState.stat("fragile_care")
 	if amount <= 0.001 or not packages.has(p):
 		return
 	p["integrity"] = maxf(0.0, p["integrity"] - amount)
@@ -182,6 +226,20 @@ func _destroy(p: Dictionary) -> void:
 		GameState.toast("You hear the unmistakable sound of %s becoming gravel." % job["item"], Color(1, 0.6, 0.6))
 	else:
 		GameState.toast("The %s fell apart." % p["def"]["name"].to_lower(), Color(1, 0.6, 0.6))
+
+
+func _curse_effect() -> void:
+	match randi() % 3:
+		0:
+			GameState.toast("The cursed parcel giggles. A bandit somewhere sneezes.", Color(0.8, 0.6, 1))
+		1:
+			goblin.velocity.y = 7.0
+			goblin.rig.set_expression("scared", 0.8)
+			GameState.toast("*the parcel hiccups and you hop*", Color(0.8, 0.6, 1))
+		2:
+			goblin.rig.set_expression("dizzy", 1.0)
+			GameState.toast("Spooky whispers: 'deliver... meee...'", Color(0.8, 0.6, 1))
+	FX.puff(goblin.global_position + Vector3.UP * 1.5, Color(0.6, 0.3, 0.8), 0.6, 1.0, 0.8)
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +282,12 @@ func _process(delta: float) -> void:
 				target_pos = base + Vector3.UP * (stack_h + size.y * 0.5) + anchor.basis.z.normalized() * size.z * 0.35
 				stack_h += size.y * 0.92
 
-		# Living packages: random jolts that shove the goblin.
+		if p["type"] == "cursed":
+			p["jolt_t"] -= dt
+			if p["jolt_t"] <= 0.0:
+				p["jolt_t"] = randf_range(6.0, 12.0)
+				_curse_effect()
+		# Living packages: random jolts that shove the goblin, sometimes escape.
 		if p["type"] == "living":
 			p["jolt_t"] -= dt
 			if p["jolt_t"] <= 0.0:
@@ -235,6 +298,9 @@ func _process(delta: float) -> void:
 					goblin.velocity += Vector3(j.x, 0, j.z) * 2.0
 					goblin.balance += 0.18
 					goblin.rig.set_expression("scared", 0.5)
+				if randf() < 0.12 and goblin.state == Goblin.State.NORMAL:
+					call_deferred("drop_one", "The living parcel ESCAPED! Catch it!", true)
+					return
 				if randf() < 0.35:
 					GameState.toast(WorldText.pick(["*angry clucking*", "*scritch scritch*", "*something sneezed*", "*thump*"]), Color(0.8, 1, 0.7))
 

@@ -28,6 +28,7 @@ var _board_site := ""
 var _pause: PanelContainer
 var _seed_edit: LineEdit
 var _hint: Label
+var _home: HomeUI
 
 
 func setup(w: WorldData, wn: World, goblin: Goblin) -> void:
@@ -42,6 +43,8 @@ func setup(w: WorldData, wn: World, goblin: Goblin) -> void:
 	GameState.inventory_changed.connect(_refresh_status)
 	GameState.jobs_changed.connect(_refresh_parcels)
 	GameState.board_requested.connect(open_board)
+	GameState.home_requested.connect(func(t): _home.open(t))
+	GameState.rep_changed.connect(func(_l): _refresh_status())
 	goblin.health_changed.connect(func(hp, mx): _hearts.set_hp(hp, mx))
 	goblin.carrier.changed.connect(_refresh_parcels)
 	goblin.knocked_out.connect(_on_knocked_out)
@@ -100,7 +103,7 @@ func _build() -> void:
 
 	# --- Parcels (left) ---
 	_parcels = VBoxContainer.new()
-	_parcels.position = Vector2(16, 150)
+	_parcels.position = Vector2(16, 185)
 	_parcels.add_theme_constant_override("separation", 6)
 	root.add_child(_parcels)
 
@@ -129,7 +132,7 @@ func _build() -> void:
 	_minimap.meters_per_px = 1.0
 	root.add_child(_minimap)
 
-	_hint = _label("WASD move · Shift sprint · Space jump (mash when floppy) · F/Click bonk · E interact · M map · Esc menu", 13, Color(1, 1, 1, 0.7))
+	_hint = _label("WASD move · Shift sprint · Space jump · F/Click bonk · E interact · M map · Esc menu · walk (don't sprint) to sneak", 13, Color(1, 1, 1, 0.7))
 	_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_hint.position = Vector2(16, -30)
 	root.add_child(_hint)
@@ -207,22 +210,15 @@ func _build() -> void:
 	rnd.text = "New random world (F5)"
 	rnd.pressed.connect(func(): _request_world(""))
 	pv.add_child(rnd)
-	var crow := HBoxContainer.new()
-	pv.add_child(crow)
-	crow.add_child(_label("Clumsiness (random trips):", 15))
-	var slider := HSlider.new()
-	slider.min_value = 0.0
-	slider.max_value = 2.0
-	slider.step = 0.25
-	slider.value = GameState.clumsiness
-	slider.custom_minimum_size = Vector2(200, 0)
-	slider.value_changed.connect(func(v): GameState.clumsiness = v)
-	crow.add_child(slider)
 	pv.add_child(_label("Controls\n  WASD / left stick: move     Mouse / right stick: camera\n  Shift: sprint     Space: jump (in ragdoll: wiggle free)\n  F / click: satchel bonk     E: interact / deliver\n  M: map     C: recentre camera     F5: new world", 14, Color(0.9, 0.9, 0.85)))
 	var quit := Button.new()
-	quit.text = "Quit to title"
-	quit.pressed.connect(func(): quit_requested.emit())
+	quit.text = "Save & quit to title"
+	quit.pressed.connect(func():
+		GameState.save_profile()
+		quit_requested.emit())
 	pv.add_child(quit)
+	_home = HomeUI.new()
+	root.add_child(_home)
 
 
 func _process(_delta: float) -> void:
@@ -239,7 +235,9 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
-		if _board.visible:
+		if _home.visible:
+			_home.close_ui()
+		elif _board.visible:
 			close_board()
 		elif _bigmap.visible:
 			_bigmap.visible = false
@@ -275,9 +273,12 @@ func _refresh_status() -> void:
 	_status.text = "Seed %d  ·  %s  ·  %s" % [world.world_seed, world.region_name, world.biome.display_name]
 	_gold.text = "   %d gold   ·   %d delivered" % [GameState.gold, GameState.deliveries_done]
 	var names: Array[String] = []
-	for t in GameState.trinkets:
-		names.append(LootTable.TRINKETS[t]["name"])
-	_trinkets.text = ("Trinkets: " + ", ".join(names)) if not names.is_empty() else ""
+	for slot in GameState.equipped:
+		names.append(Items.name_of(GameState.equipped[slot]))
+	var lvl := GameState.rep_level()
+	var next: int = Items.REP_LEVELS[mini(lvl, Items.REP_LEVELS.size() - 1)]
+	_trinkets.text = "Reputation %d  (%d/%d)   ·   Backpack %d/%d%s" % [lvl, GameState.rep, next, GameState.backpack.size(), GameState.backpack_capacity(),
+		("\nGear: " + ", ".join(names)) if not names.is_empty() else ""]
 
 
 func _refresh_parcels() -> void:
@@ -309,7 +310,11 @@ func _refresh_parcels() -> void:
 		var dist := _label("", 13, Color(0.85, 0.9, 1.0))
 		dist.name = "Dist"
 		dist.set_meta("job", j)
+		dist.set_meta("pkg", p)
 		v.add_child(dist)
+		var objl := _label("", 12, Color(0.9, 0.9, 0.7))
+		objl.name = "Obj"
+		v.add_child(objl)
 		var bar := ProgressBar.new()
 		bar.min_value = 0
 		bar.max_value = 100
@@ -344,7 +349,15 @@ func _refresh_parcel_distances() -> void:
 		var d := Vector2(target.x - from.x, target.z - from.z)
 		var dir := _compass(d)
 		var extra := "  (inside the dungeon!)" if npc.get("in_dungeon", false) else ""
-		l.text = "   %dm %s%s  ·  %dg" % [int(d.length()), dir, extra, j["reward"]]
+		var tl := GameState.time_left(j)
+		var timer := ("  ·  %ds left" % int(maxf(tl, 0.0))) if tl != INF else ""
+		l.text = "   %dm %s%s  ·  %dg%s" % [int(d.length()), dir, extra, j["reward"], timer]
+		var objl: Label = panel.find_child("Obj", true, false)
+		if objl:
+			var parts: Array[String] = []
+			for o in GameState.objective_status(j, l.get_meta("pkg")["integrity"]):
+				parts.append("%s %s (+%d)" % ["[x]" if o["failed"] else "[ok]", o["label"], o["bonus"]])
+			objl.text = "   " + "   ".join(parts) if not parts.is_empty() else ""
 
 
 static func _compass(d: Vector2) -> String:
@@ -401,10 +414,22 @@ func _fill_board() -> void:
 			danger += "!"
 		v.add_child(_label("%s  —  %s" % [def["name"], j["item"]], 16, Color(1, 0.95, 0.8)))
 		v.add_child(_label("To %s at %s  ·  %dm  ·  danger %s  ·  %s" % [j["recipient_name"], j["to_name"], int(j["distance"]), danger if danger != "" else "-", _effect_text(j["package"])], 13, Color(0.85, 0.9, 1)))
+		var goals: Array[String] = []
+		for o in j.get("objectives", []):
+			goals.append("%s (+%dg)" % [o["label"], o["bonus"]])
+		var tier: String = j.get("tier", "normal")
+		var extras := "%s contract" % tier.capitalize()
+		if j.get("reward_item", "") != "":
+			extras += "  ·  Reward item: %s" % Items.name_of(j["reward_item"])
+		if not goals.is_empty():
+			extras += "  ·  Bonus goals: " + ", ".join(goals)
+		v.add_child(_label(extras, 13, {"normal": Color(0.8, 0.95, 0.8), "dangerous": Color(1, 0.6, 0.5), "special": Color(1, 0.75, 0.25)}[tier]))
 		if j["note"] != "":
 			v.add_child(_label(j["note"], 13, Color(1, 0.75, 0.55)))
+		var why := GameState.job_locked_reason(j)
 		var btn := Button.new()
-		btn.text = "Accept  (%d gold)" % j["reward"]
+		btn.text = "Accept  (%d gold)" % j["reward"] if why == "" else "LOCKED: " + why
+		btn.disabled = why != ""
 		var jid: String = j["id"]
 		btn.pressed.connect(func():
 			if GameState.accept_job(jid):
@@ -419,9 +444,11 @@ static func _effect_text(pkg: String) -> String:
 		"huge": return "blocks your view"
 		"fragile": return "don't fall over"
 		"unstable": return "wobbles your balance"
-		"magical": return "floats behind you"
+		"magical": return "floaty: lighter jumps"
 		"explosive": return "do NOT fall over"
-		"living": return "it moves"
+		"living": return "it moves (and escapes!)"
+		"cursed": return "attracts enemies, spooky"
+		"valuable": return "bandits want it, handle with care"
 	return "easy"
 
 

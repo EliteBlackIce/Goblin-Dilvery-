@@ -19,6 +19,7 @@ func _wait(n: int) -> void:
 
 
 func _ready() -> void:
+	GameState.delete_save()
 	GameState.pending_seed = 48291736
 	GameState.toast_requested.connect(func(t, _c): print("  toast: ", t))
 	main = load("res://scenes/main.tscn").instantiate()
@@ -91,7 +92,9 @@ func _run() -> void:
 	# Accept and deliver a job.
 	var jobs := GameState.jobs_at("village")
 	check(jobs.size() > 0, "the village board has jobs")
-	var job: Dictionary = jobs[0]
+	var open_jobs := jobs.filter(func(x): return GameState.job_locked_reason(x) == "")
+	check(open_jobs.size() >= 3, "a new courier has at least 3 unlocked contracts (%d)" % open_jobs.size())
+	var job: Dictionary = open_jobs[0] if not open_jobs.is_empty() else jobs[0]
 	check(GameState.accept_job(job["id"]), "accepting a job")
 	check(g.carrier.packages.size() == 1, "the parcel is carried")
 	var mods := g.carrier.get_modifiers()
@@ -100,6 +103,51 @@ func _run() -> void:
 	check(GameState.try_deliver(job["recipient_id"]), "delivering to the recipient")
 	check(GameState.gold > gold_before, "delivery pays gold")
 	check(g.carrier.packages.is_empty(), "parcel handed over")
+
+	# Post office: walk-in home base, shop, equip, building upgrade, save/load.
+	var po: PostOffice = get_tree().get_first_node_in_group("post_office")
+	check(po != null, "post office building exists")
+	g.teleport(po.to_global(Vector3(-2.0, 0.3, -2.0)))
+	await _wait(30)
+	check(GameState.indoors, "goblin can walk inside the post office")
+	check(g.grounded, "standing on the post office floor")
+	GameState.add_gold(2000)
+	GameState.add_rep(30)
+	check(GameState.buy("boots_spring"), "buying gear at the shop")
+	GameState.equip("boots_spring")
+	check(GameState.stat("jump") > 1.2, "equipped boots change stats")
+	for m in ["mat_planks", "mat_planks", "mat_planks", "mat_planks"]:
+		GameState.put_in_storage(m)
+	var parts_before := po.get_child_count()
+	var walls_before: int = po._bounds.size()
+	check(GameState.buy_upgrade("storage_room"), "building the storage annex")
+	await _wait(5)
+	check(po._bounds.size() == walls_before + 1, "the annex physically appears on the building")
+	GameState.put_in_storage("furn_table")
+	GameState.place_furniture(1, "furn_table")
+	check(GameState.furniture.get("1", "") == "furn_table", "placing furniture in the room")
+	GameState.save_profile()
+	var gold_saved := GameState.gold
+	GameState.gold = 0
+	GameState.load_profile()
+	check(GameState.gold == gold_saved and GameState.has_upgrade("storage_room") and GameState.equipped.get("boots", "") == "boots_spring", "progress survives save/load")
+	parts_before = parts_before
+	g.teleport(po.to_global(Vector3(-2.0, 0.5, -10.0)))
+	await _wait(10)
+	check(not GameState.indoors, "walking back outside")
+
+	# Dropped parcel can be recovered.
+	var j2: Dictionary = GameState.jobs_at("village")[0]
+	j2["min_rep"] = 1
+	j2["tier"] = "normal"
+	GameState.accept_job(j2["id"])
+	g.carrier.drop_one("test drop")
+	await _wait(5)
+	var drops := get_tree().get_nodes_in_group("interactable").filter(func(n): return n is DroppedPackage)
+	check(drops.size() == 1 and g.carrier.packages.is_empty(), "parcels can be knocked off into the world")
+	if drops.size() == 1:
+		drops[0].interact(g)
+	check(g.carrier.packages.size() == 1, "and picked back up")
 
 	# Dungeon round trip.
 	world.enter_dungeon("dungeon_0")
@@ -112,5 +160,6 @@ func _run() -> void:
 	await _wait(30)
 	check(not world.in_dungeon and g.global_position.y > 0.0, "exited back to the overworld")
 
+	GameState.delete_save()
 	print("\n%s (%d failure%s)" % ["PASS" if failures == 0 else "FAIL", failures, "" if failures == 1 else "s"])
 	get_tree().quit(1 if failures > 0 else 0)

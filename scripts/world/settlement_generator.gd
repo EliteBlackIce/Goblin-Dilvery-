@@ -9,7 +9,7 @@ extends RefCounted
 ## species of the villagers and how they talk.
 
 const FOOTPRINTS := {
-	"post_office": Vector2(4.0, 3.5), "tavern": Vector2(4.5, 4.0), "blacksmith": Vector2(3.6, 3.0),
+	"post_office": Vector2(8.5, 6.5), "tavern": Vector2(4.5, 4.0), "blacksmith": Vector2(3.6, 3.0),
 	"shop": Vector2(3.2, 2.8), "temple": Vector2(3.8, 5.0), "town_hall": Vector2(5.0, 4.0),
 	"stable": Vector2(4.0, 2.8), "house_small": Vector2(2.4, 2.4), "house_medium": Vector2(3.0, 2.6),
 	"house_tall": Vector2(2.5, 2.5), "goblin_hut": Vector2(2.5, 2.5), "ruined_house": Vector2(2.6, 2.6),
@@ -18,7 +18,7 @@ const FOOTPRINTS := {
 }
 
 const ROLES := {
-	"post_office": "postmaster", "tavern": "innkeeper", "blacksmith": "smith", "shop": "shopkeeper",
+	"tavern": "innkeeper", "blacksmith": "smith", "shop": "shopkeeper",
 	"temple": "priest", "town_hall": "mayor", "stable": "stablehand", "farmhouse": "farmer",
 	"barn": "farmer", "windmill": "miller", "house_small": "resident", "house_medium": "resident",
 	"house_tall": "resident", "goblin_hut": "resident", "tent": "resident",
@@ -64,14 +64,17 @@ static func layout(w: WorldData, site: Dictionary, rng: RandomNumberGenerator) -
 		var gap := _largest_gap_angle(streets)
 		var half: Vector2 = FOOTPRINTS["post_office"]
 		var dir := Vector3(cos(gap), 0, sin(gap))
-		var pos := c + dir * (plaza_r + half.y + 1.0)
+		var pos := c + dir * (plaza_r + half.y + 1.5)
 		pos.y = w.height_at(pos.x, pos.z)
 		var yaw := atan2(dir.x, dir.z)  # front (-Z) faces the plaza
 		_add_building(w, site, rng, "post_office", pos, yaw, half, placed, pers)
+		# Reserve room for future annexes (workshop left, bedroom right, storage behind).
+		w.mark_occupied(pos + dir * 3.0, Vector2(14.0, 9.0), yaw)
+		placed.append({"pos": pos + dir * 3.0, "r": 13.0})
 		site["post_office"] = {"pos": pos, "yaw": yaw, "depth": half.y * 2.0}
 		# Notice board next to the door.
 		var right := Vector3(cos(yaw), 0, -sin(yaw))
-		var bp := pos - dir * (half.y + 1.5) + right * (half.x + 0.5)
+		var bp := pos - dir * (half.y + 1.5) - right * (half.x + 0.8)
 		bp.y = w.height_at(bp.x, bp.z)
 		w.add_placement({"id": id + ":board", "kind": "board", "pos": bp, "yaw": yaw, "data": {"site": id}})
 		placed.append({"pos": bp, "r": 1.0})

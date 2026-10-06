@@ -65,7 +65,25 @@ static func generate_initial(w: WorldData) -> Array:
 				continue
 			jobs.append(_make_job(w, rng, o, dest, npc, "0_s%d" % n))
 			n += 1
+	_ensure_starter_jobs(w, jobs)
 	return jobs
+
+
+## New couriers always find a few beginner contracts at home.
+static func _ensure_starter_jobs(w: WorldData, jobs: Array) -> void:
+	var open := jobs.filter(func(j): return j["from"] == "village" and int(j["min_rep"]) <= 1)
+	for j in jobs:
+		if open.size() >= 4:
+			break
+		var dest := w.site(j["to"])
+		if j["from"] == "village" and int(j["min_rep"]) > 1 and dest["kind"] in ["village", "hamlet", "landmark"]:
+			if j["package"] in ["cursed", "valuable"]:
+				j["package"] = "small"
+				j["item"] = PackageTypes.get_def("small")["items"][0]
+			j["tier"] = "normal"
+			j["min_rep"] = 1
+			j["reward_item"] = ""
+			open.append(j)
 
 
 ## More work appears as jobs are completed. Deterministic per seed + round.
@@ -119,6 +137,9 @@ static func _make_job(w: WorldData, rng: RandomNumberGenerator, from: Dictionary
 			weights["heavy"] = weights.get("heavy", 1) + 2
 	if to["personality"] == "wealthy":
 		weights["fragile"] = weights.get("fragile", 1) + 3
+		weights["valuable"] = weights.get("valuable", 0) + 3
+	if to["kind"] == "dungeon" or to["personality"] == "abandoned":
+		weights["cursed"] = weights.get("cursed", 0) + 3
 	if to["personality"] == "farm":
 		weights["living"] = weights.get("living", 1) + 2
 		weights["heavy"] = weights.get("heavy", 1) + 2
@@ -140,7 +161,35 @@ static func _make_job(w: WorldData, rng: RandomNumberGenerator, from: Dictionary
 			note = "Recipient is a bandit chief. The bandits may not know you're expected."
 		"landmark":
 			note = "Recipient lives out in the wilds. Bring snacks."
+	# Tier: how risky/special the contract is. Gates by reputation.
+	var tier := "normal"
+	if danger > 0.55 or to["kind"] in ["dungeon", "camp"]:
+		tier = "dangerous"
+	if rng.randf() < 0.12:
+		tier = "special"
+	var objectives := []
+	var time_limit := 0.0
+	if rng.randf() < 0.45 or tier != "normal":
+		time_limit = round(dist / 4.5 + 45.0)
+		objectives.append({"type": "time", "label": "Deliver within %ds" % int(time_limit), "bonus": int(reward * 0.4)})
+	if float(def["fragility"]) >= 0.3 or rng.randf() < 0.35:
+		objectives.append({"type": "pristine", "label": "Keep it pristine", "bonus": int(reward * 0.35)})
+	if tier != "normal" and rng.randf() < 0.6:
+		objectives.append({"type": "untouched", "label": "Don't get hit", "bonus": int(reward * 0.3)})
+	var reward_item := ""
+	match tier:
+		"special":
+			reward = int(reward * 1.8)
+			reward_item = Items.roll(rng, "rare")
+			note = ("RARE CONTRACT! " + note).strip_edges()
+		"dangerous":
+			reward = int(reward * 1.3)
+			reward_item = Items.roll(rng, "common") if rng.randf() < 0.5 else ""
+	var min_rep: int = {"normal": 1, "dangerous": 2, "special": 3}[tier]
+	if pkg in ["cursed", "valuable"]:
+		min_rep = maxi(min_rep, 2)
 	return {
+		"tier": tier, "objectives": objectives, "time_limit": time_limit, "reward_item": reward_item, "min_rep": min_rep,
 		"id": "job_" + suffix, "from": from["id"], "to": to["id"], "from_name": from["name"], "to_name": to["name"],
 		"recipient_id": npc["id"], "recipient_name": npc["name"], "sender_name": sender["name"],
 		"package": pkg, "item": item, "distance": dist, "danger": danger, "reward": reward,

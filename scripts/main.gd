@@ -72,8 +72,14 @@ func _show_title() -> void:
 	var edit := LineEdit.new()
 	edit.placeholder_text = "World seed (blank = random, words work too)"
 	v.add_child(edit)
+	if GameState.has_save() and GameState.last_seed() >= 0:
+		var cont := Button.new()
+		cont.text = "Continue  (world %d · %d gold · reputation %d)" % [GameState.last_seed(), GameState.gold, GameState.rep_level()]
+		cont.custom_minimum_size = Vector2(0, 48)
+		cont.pressed.connect(func(): _start(GameState.last_seed()))
+		v.add_child(cont)
 	var start := Button.new()
-	start.text = "Start Delivering"
+	start.text = "Start Delivering (new world, keeps your progress)" if GameState.has_save() else "Start Delivering"
 	start.custom_minimum_size = Vector2(0, 48)
 	start.pressed.connect(func(): _start_from_text(edit.text))
 	v.add_child(start)
@@ -86,6 +92,16 @@ func _show_title() -> void:
 	play.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/movement_playground.tscn"))
 	v.add_child(play)
 	edit.text_submitted.connect(func(t): _start_from_text(t))
+	if GameState.has_save():
+		var wipe := Button.new()
+		wipe.text = "Reset ALL progress"
+		wipe.pressed.connect(func():
+			if wipe.text.begins_with("Really"):
+				GameState.delete_save()
+				get_tree().reload_current_scene()
+			else:
+				wipe.text = "Really? Click again to erase your save")
+		v.add_child(wipe)
 
 
 func _start_from_text(text: String) -> void:
@@ -150,10 +166,17 @@ func _start(seed_value: int) -> void:
 		get_tree().reload_current_scene())
 	loading.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	GameState.toast("Welcome to %s, courier! Your post office is right here. Check the board." % data.site("village")["name"], Color(1, 0.95, 0.7))
+	GameState.save_profile()
+	GameState.toast("Welcome to %s, courier! Walk into your post office: contracts at the counter, shop and upgrades inside." % data.site("village")["name"], Color(1, 0.95, 0.7))
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and GameState.world != null:
+		GameState.save_profile()
 
 
 func _new_world(seed_value: int) -> void:
+	GameState.save_profile()
 	get_tree().paused = false
 	GameState.input_locked = false
 	GameState.pending_seed = seed_value

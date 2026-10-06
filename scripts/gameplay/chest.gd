@@ -48,6 +48,10 @@ func get_interact_prompt(_g: Goblin) -> String:
 func interact(_g: Goblin) -> void:
 	if opened:
 		return
+	var item: String = loot.get("item", "")
+	if item != "" and GameState.backpack.size() >= GameState.backpack_capacity():
+		GameState.toast("Something good is in here, but your backpack is full. Unload at the post office!", Color(1, 0.7, 0.5))
+		return
 	opened = true
 	GameState.consume(placement_id)
 	var tw := create_tween()
@@ -63,6 +67,5 @@ func interact(_g: Goblin) -> void:
 		GameState.player.heal(potions * 2)
 		parts.append("%d potion%s (gulp)" % [potions, "s" if potions > 1 else ""])
 	GameState.toast("Chest: " + (", ".join(parts) if not parts.is_empty() else "...a single moth."), Color(1, 0.9, 0.4))
-	var trinket: String = loot.get("trinket", "")
-	if trinket != "":
-		GameState.give_trinket(trinket)
+	if item != "":
+		GameState.give_item(item)

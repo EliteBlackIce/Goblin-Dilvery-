@@ -39,8 +39,8 @@ static func _green_fields() -> BiomeDef:
 	b.dungeon_enemies = {"bandit": 3, "rat": 4}
 	b.village_personalities = {"cozy": 3, "wealthy": 2, "goblin": 2}
 	b.hamlet_personalities = {"farm": 3, "abandoned": 2, "bandit": 2, "cozy": 1}
-	b.packages = {"small": 6, "heavy": 3, "fragile": 3, "huge": 2, "unstable": 2, "living": 2, "magical": 1, "explosive": 1}
-	b.events = {"bandit_ambush": 3, "traveling_merchant": 3, "lost_package": 3, "broken_cart": 2, "rival_courier": 2}
+	b.packages = {"small": 6, "heavy": 3, "fragile": 3, "huge": 2, "unstable": 2, "living": 2, "magical": 2, "explosive": 1, "valuable": 1, "cursed": 1}
+	b.events = {"bandit_ambush": 3, "traveling_merchant": 3, "lost_package": 3, "broken_cart": 2, "rival_courier": 2, "stranded_villager": 3}
 	b.loot = {"gold": 60, "potion": 25, "trinket": 15}
 	b.landmarks = ["standing_stones", "ruined_tower", "giant_tree"]
 	b.dungeon_theme = {
