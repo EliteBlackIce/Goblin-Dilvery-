@@ -14,7 +14,7 @@ func _ready() -> void:
 		var k := MeshKit.new(4, 0.0)
 		for i in 3:
 			k.cylinder(MeshKit.rot(Vector3(i * 0.12 - 0.12, 0.25 + (i % 2) * 0.08, 0), Vector3(PI * 0.5, 0, 0.3 * i)), 0.16, 0.16, 0.05, Color(1.0, 0.82, 0.25), 8)
-		_coin_mesh = k.commit()
+		_coin_mesh = Assets.pick("props/coins", k.commit())
 	_mesh = Node3D.new()
 	add_child(_mesh)
 	var mi := MeshInstance3D.new()

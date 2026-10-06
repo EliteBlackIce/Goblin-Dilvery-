@@ -17,7 +17,7 @@ func _ready() -> void:
 	for i in 5:
 		k.box(MeshKit.rot(Vector3(randf_range(-1, 1), randf_range(-1.5, 1.5), -size.z * 0.5 - 0.01), Vector3(0, 0, randf_range(-1, 1))), Vector3(0.9, 0.06, 0.02), Color(0.15, 0.13, 0.14))
 		k.box(MeshKit.rot(Vector3(randf_range(-1, 1), randf_range(-1.5, 1.5), size.z * 0.5 + 0.01), Vector3(0, 0, randf_range(-1, 1))), Vector3(0.9, 0.06, 0.02), Color(0.15, 0.13, 0.14))
-	_mi = Mats.instance(k.commit())
+	_mi = Mats.instance(Assets.pick("dungeon/cracked_wall", k.commit()))
 	add_child(_mi)
 	var cs := CollisionShape3D.new()
 	var b := BoxShape3D.new()

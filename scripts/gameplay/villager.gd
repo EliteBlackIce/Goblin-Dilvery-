@@ -65,7 +65,7 @@ func _build() -> void:
 	for sx in [-0.14, 0.14]:
 		k.sphere(MeshKit.at(Vector3(sx, 0.07, -0.06), 0, Vector3(1, 0.6, 1.5)), 0.12, pants.darkened(0.4), 6, 4)
 	k.cylinder(MeshKit.at(Vector3(0, 0.62, 0)), 0.36, 0.36, 0.06, pants.darkened(0.2), 8)
-	body_root.add_child(Mats.instance(k.commit()))
+	body_root.add_child(Mats.instance(Assets.pick("villagers/body", k.commit())))
 
 	_head = Node3D.new()
 	_head.position = Vector3(0, 1.25 * scale_y + 0.2, 0)
@@ -96,7 +96,7 @@ func _build() -> void:
 	if npc.get("role", "") == "postmaster":
 		k.cylinder(MeshKit.at(Vector3(0, head_r * 0.85, 0)), head_r * 0.9, head_r * 0.85, 0.15, GoblinRig.CAP, 8)
 		k.box(MeshKit.at(Vector3(0, head_r * 0.78, -head_r * 0.85)), Vector3(head_r * 1.3, 0.03, 0.2), GoblinRig.CAP_DARK)
-	_head.add_child(Mats.instance(k.commit()))
+	_head.add_child(Mats.instance(Assets.pick("villagers/head_" + ("goblin" if goblin else "human"), k.commit())))
 
 	for side in [-1.0, 1.0]:
 		var arm := Node3D.new()
@@ -105,7 +105,7 @@ func _build() -> void:
 		var ak := MeshKit.new(3)
 		ak.cylinder(MeshKit.at(Vector3(0, -0.22, 0)), 0.07, 0.07, 0.44, shirt.darkened(0.1), 6)
 		ak.sphere(MeshKit.at(Vector3(0, -0.48, 0)), 0.09, skin, 6, 4)
-		arm.add_child(Mats.instance(ak.commit()))
+		arm.add_child(Mats.instance(Assets.pick("villagers/arm", ak.commit())))
 		if side < 0:
 			_arm_l = arm
 		else:

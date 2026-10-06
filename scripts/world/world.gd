@@ -81,7 +81,7 @@ func _build_static_scenery() -> void:
 		k.cylinder(MeshKit.at(p + Vector3(0, h * 0.5 - 5.0, 0), rng.randf() * TAU), base, base * 0.15, h, Color(0.42, 0.6, 0.38).lerp(Color(0.55, 0.6, 0.62), rng.randf()), 7)
 		if h > 75.0:
 			k.cylinder(MeshKit.at(p + Vector3(0, h - 9.0, 0)), base * 0.3, 0.0, 18.0, Color(0.97, 0.98, 1.0), 7)
-	var ring := Mats.instance(k.commit(), false)
+	var ring := Mats.instance(Assets.pick("world/horizon_mountains", k.commit()), false)
 	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_overworld_root.add_child(ring)
 

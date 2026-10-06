@@ -153,7 +153,7 @@ func _build() -> void:
 	k.box(MeshKit.at(Vector3(0, 0.03, -0.25)), Vector3(0.08, 0.07, 0.03), VEST_TRIM)
 	k.box(MeshKit.rot(Vector3(0.24, 0.0, 0.04), Vector3(0, 0, 0.1)), Vector3(0.12, 0.18, 0.2), SATCHEL)
 	k.box(MeshKit.rot(Vector3(0.0, 0.25, 0.0), Vector3(0, 0, -0.75)), Vector3(0.05, 0.62, 0.55), SATCHEL.darkened(0.15))
-	torso_mesh = _part(hips, k.commit(), Vector3.ZERO, "Torso")
+	torso_mesh = _part(hips, Assets.pick("goblin/torso", k.commit()), Vector3.ZERO, "Torso")
 
 	back_anchor = _pivot(hips, Vector3(0, 0.3, 0.27), "BackAnchor")
 	front_anchor = _pivot(hips, Vector3(0, 0.32, -0.55), "FrontAnchor")
@@ -166,7 +166,7 @@ func _build() -> void:
 	k.cylinder_between(Vector3(0, -0.02, -0.3), Vector3(0, -0.08, -0.6), 0.075, SKIN_DARK, 6)
 	k.sphere(MeshKit.at(Vector3(0, -0.085, -0.6)), 0.05, SKIN_DARK, 6, 4)
 	k.sphere(MeshKit.at(Vector3(0.0, -0.18, -0.17), 0, Vector3(1.4, 0.6, 1.0)), 0.16, SKIN, 8, 4)
-	_part(head, k.commit(), Vector3.ZERO, "Skull")
+	_part(head, Assets.pick("goblin/head", k.commit()), Vector3.ZERO, "Skull")
 
 	# Ears: long floppy cones on spring pivots.
 	for side in [-1.0, 1.0]:
@@ -175,7 +175,7 @@ func _build() -> void:
 		var tip := Vector3(0.46 * side, 0.12, 0.08)
 		k.cone_between(Vector3.ZERO, tip, 0.13, 0.0, SKIN, 6, 0.45)
 		k.cone_between(Vector3(0, 0, -0.03), tip * 0.92 + Vector3(0, 0, -0.03), 0.09, 0.0, SKIN_INNER, 6, 0.3)
-		_part(ear, k.commit())
+		_part(ear, Assets.pick("goblin/ear_l" if side < 0 else "goblin/ear_r", k.commit()))
 		if side < 0:
 			ear_l = ear
 		else:
@@ -186,15 +186,15 @@ func _build() -> void:
 		var eye := _pivot(head, Vector3(0.15 * side, 0.08, -0.29), "EyeL" if side < 0 else "EyeR")
 		k = MeshKit.new(14, 0.0)
 		k.sphere(MeshKit.at(Vector3.ZERO, 0, Vector3(1, 1.1, 0.7)), 0.11, EYE, 8, 6)
-		_part(eye, k.commit())
+		_part(eye, Assets.pick("goblin/eye", k.commit()))
 		var pupil := _pivot(eye, Vector3(0, 0, -0.07), "Pupil")
 		k = MeshKit.new(15, 0.0)
 		k.sphere(MeshKit.at(Vector3.ZERO, 0, Vector3(1, 1, 0.5)), 0.05, PUPIL, 6, 4)
-		_part(pupil, k.commit())
+		_part(pupil, Assets.pick("goblin/pupil", k.commit()))
 		var brow := _pivot(head, Vector3(0.15 * side, 0.22, -0.3), "Brow")
 		k = MeshKit.new(16, 0.0)
 		k.box(Transform3D(), Vector3(0.16, 0.04, 0.05), SKIN_DARK.darkened(0.35))
-		_part(brow, k.commit())
+		_part(brow, Assets.pick("goblin/brow", k.commit()))
 		if side < 0:
 			eye_l = eye
 			pupil_l = pupil
@@ -209,7 +209,7 @@ func _build() -> void:
 	k = MeshKit.new(17, 0.0)
 	k.box(Transform3D(), Vector3(0.2, 0.045, 0.05), MOUTH)
 	k.box(MeshKit.at(Vector3(0.05, 0.035, -0.012)), Vector3(0.04, 0.045, 0.03), TOOTH)
-	_part(mouth, k.commit())
+	_part(mouth, Assets.pick("goblin/mouth", k.commit()))
 
 	# Oversized hat (courier cap by default; gear can swap it).
 	cap = _pivot(head, Vector3(0, 0.25, 0.02), "Cap")
@@ -223,7 +223,7 @@ func _build() -> void:
 		k.sphere(MeshKit.at(Vector3(0, -0.45, -0.02), 0, Vector3(1.0, 1.05, 0.85)), 0.115, SKIN, 8, 5)
 		k.sphere(MeshKit.at(Vector3(0.07 * -side, -0.42, -0.06), 0, Vector3(0.5, 0.8, 0.5)), 0.06, SKIN, 6, 4)
 		k.cylinder(MeshKit.at(Vector3(0, -0.02, 0)), 0.07, 0.065, 0.1, VEST, 7)
-		_part(sh, k.commit())
+		_part(sh, Assets.pick("goblin/arm_l" if side < 0 else "goblin/arm_r", k.commit()))
 		if side < 0:
 			shoulder_l = sh
 		else:
@@ -237,10 +237,10 @@ func _build() -> void:
 		k = MeshKit.new(20)
 		k.sphere(MeshKit.at(Vector3(0, 0.065, -0.07), 0, Vector3(0.13, 0.075, 0.23) / 0.1), 0.1, SKIN_DARK, 8, 5)
 		k.sphere(MeshKit.at(Vector3(0.04 * side, 0.08, -0.26), 0, Vector3(0.5, 0.45, 0.55)), 0.07, SKIN_DARK, 6, 4)
-		_part(foot, k.commit())
+		_part(foot, Assets.pick("goblin/foot_l" if side < 0 else "goblin/foot_r", k.commit()))
 		var leg_k := MeshKit.new(21)
 		leg_k.cylinder(Transform3D(), 0.045, 0.045, 1.0, SKIN, 6, false)
-		var leg := _part(squash, leg_k.commit(), Vector3.ZERO, "LegL" if side < 0 else "LegR")
+		var leg := _part(squash, Assets.pick("goblin/leg", leg_k.commit()), Vector3.ZERO, "LegL" if side < 0 else "LegR")
 		if side < 0:
 			foot_l = foot
 			leg_l = leg
@@ -279,7 +279,7 @@ func set_hat(style: String) -> void:
 			k.cylinder(MeshKit.rot(Vector3(0, 0.0, 0), Vector3(-0.08, 0, 0)), 0.335, 0.335, 0.04, CAP_DARK, 10)
 			k.box(MeshKit.rot(Vector3(0, -0.005, -0.38), Vector3(0.12, 0, 0)), Vector3(0.42, 0.03, 0.24), CAP_DARK)
 			k.box(MeshKit.rot(Vector3(0, 0.09, -0.3), Vector3(-0.3, 0, 0)), Vector3(0.11, 0.08, 0.02), VEST_TRIM)
-	_part(cap, k.commit())
+	_part(cap, Assets.pick("goblin/hat_" + style, k.commit()))
 
 
 # ===========================================================================

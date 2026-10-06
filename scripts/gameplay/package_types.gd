@@ -123,4 +123,4 @@ static func build_mesh(type_id: String) -> ArrayMesh:
 		_:
 			k.box(Transform3D(), size, col)
 			k.box(Transform3D(), Vector3(size.x + 0.01, size.y + 0.01, 0.05), Color(0.85, 0.78, 0.55))
-	return k.commit()
+	return Assets.pick("packages/" + type_id, k.commit())

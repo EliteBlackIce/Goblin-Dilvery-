@@ -61,4 +61,4 @@ static func _build(kind: String) -> ArrayMesh:
 		"mushroom":
 			k.cylinder(MeshKit.at(Vector3(0, 0.15, 0)), 0.06, 0.05, 0.3, Color(0.95, 0.92, 0.85), 5)
 			k.sphere(MeshKit.at(Vector3(0, 0.32, 0), 0, Vector3(1, 0.55, 1)), 0.18, Color(0.85, 0.2, 0.15), 6, 3)
-	return k.commit()
+	return Assets.pick("vegetation/" + kind, k.commit())

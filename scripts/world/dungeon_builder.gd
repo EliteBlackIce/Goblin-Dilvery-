@@ -74,7 +74,7 @@ static func build(layout: Dictionary, site: Dictionary, world: Node) -> Dictiona
 		root.add_child(w)
 		w.position = sw["pos"]
 
-	var mi := Mats.instance(k.commit(), false)
+	var mi := Mats.instance(Assets.pick("dungeon/layout_" + str(layout["site"]), k.commit()), false)
 	root.add_child(mi)
 	return {"root": root, "spawn": spawn}
 

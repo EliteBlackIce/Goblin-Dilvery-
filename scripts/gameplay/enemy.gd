@@ -117,7 +117,7 @@ func _build_visual() -> void:
 				k.sphere(MeshKit.at(Vector3(sx * 0.1, 1.5, -0.3)), 0.045, Color(1, 0.95, 0.4), 5, 3)
 				k.cylinder(MeshKit.rot(Vector3(sx * 0.45, 0.85, 0), Vector3(0, 0, sx * 0.3)), 0.08, 0.08, 0.6, skin, 6)
 			k.box(MeshKit.at(Vector3(0, 1.28, -0.28)), Vector3(0.22, 0.04, 0.03), Color(0.2, 0.05, 0.05))
-	_mesh_inst = Mats.instance(k.commit())
+	_mesh_inst = Mats.instance(Assets.pick("enemies/" + type_id, k.commit()))
 	_visual.add_child(_mesh_inst)
 	if type_id == "bandit" or type_id == "brute":
 		_weapon = Node3D.new()
@@ -126,7 +126,7 @@ func _build_visual() -> void:
 		var wk := MeshKit.new(9)
 		wk.cylinder(MeshKit.at(Vector3(0, 0.35, 0)), 0.05, 0.11, 0.8, Color(0.45, 0.3, 0.18), 6)
 		wk.sphere(MeshKit.at(Vector3(0, 0.8, 0)), 0.15, Color(0.4, 0.28, 0.17), 6, 4)
-		_weapon.add_child(Mats.instance(wk.commit()))
+		_weapon.add_child(Mats.instance(Assets.pick("enemies/club", wk.commit())))
 
 
 func _physics_process(delta: float) -> void:

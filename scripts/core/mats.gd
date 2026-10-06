@@ -61,5 +61,6 @@ static func unshaded(c: Color) -> StandardMaterial3D:
 static func instance(mesh: Mesh, toon := true) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
-	mi.material_override = vertex(toon)
+	if not Assets.is_custom(mesh):
+		mi.material_override = vertex(toon)
 	return mi

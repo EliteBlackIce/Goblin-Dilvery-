@@ -68,7 +68,7 @@ static func get_entry(piece: String, data: Dictionary) -> Dictionary:
 		rng.seed = key.hash()
 		var k := MeshKit.new(key.hash())
 		var shapes: Array = _build(piece, k, data, rng)
-		_cache[key] = {"mesh": k.commit(), "shapes": shapes}
+		_cache[key] = {"mesh": Assets.pick("pieces/" + piece, k.commit()), "shapes": shapes}
 	return _cache[key]
 
 
@@ -513,7 +513,7 @@ static func windmill_blades() -> ArrayMesh:
 		var b := Basis(Vector3.BACK, a - PI * 0.5)
 		k.box(Transform3D(b, dir * 2.4), Vector3(0.18, 4.8, 0.12), Color(0.45, 0.32, 0.2))
 		k.box(Transform3D(b, dir * 2.8 + b.x * 0.45), Vector3(0.8, 3.6, 0.05), Color(0.96, 0.93, 0.85))
-	return k.commit()
+	return Assets.pick("pieces/windmill_blades", k.commit())
 
 
 static func _guard_tower(k: MeshKit, rng: RandomNumberGenerator, pal: Dictionary) -> Array:

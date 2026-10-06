@@ -72,7 +72,7 @@ static func _mesh_for(t: String) -> ArrayMesh:
 			k.box(Transform3D(), size, c)
 			k.box(Transform3D(), Vector3(size.x + 0.02, 0.12, size.z + 0.02), c.darkened(0.25))
 			k.box(Transform3D(), Vector3(0.12, size.y + 0.02, size.z + 0.02), c.darkened(0.25))
-	_meshes[t] = k.commit()
+	_meshes[t] = Assets.pick("props/" + t, k.commit())
 	return _meshes[t]
 
 

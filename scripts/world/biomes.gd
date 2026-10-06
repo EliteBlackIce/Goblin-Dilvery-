@@ -11,9 +11,11 @@ static var _cache := {}
 
 static func get_biome(id: String) -> BiomeDef:
 	if not _cache.has(id):
-		match id:
-			_:
-				_cache[id] = _green_fields()
+		var custom := "res://assets/biomes/%s.tres" % id
+		if ResourceLoader.exists(custom):
+			_cache[id] = load(custom)  # edit colours/tables in the Inspector
+		else:
+			_cache[id] = _green_fields()
 	return _cache[id]
 
 

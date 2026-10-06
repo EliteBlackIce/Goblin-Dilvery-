@@ -161,9 +161,9 @@ func _rebuild() -> void:
 		_annex(k, roofk, body, Rect2(8, -6, 5, 6), [[-4.2, -2.0]], "right")
 		k.box(MeshKit.at(Vector3(13.05, 2.0, -3.0)), Vector3(0.05, 1.2, 1.4), PieceLibrary.GLASS_LIT)
 
-	var mi := Mats.instance(k.commit())
+	var mi := Mats.instance(Assets.pick("post_office/shell", k.commit()))
 	_built.add_child(mi)
-	_roof = Mats.instance(roofk.commit())
+	_roof = Mats.instance(Assets.pick("post_office/roof", roofk.commit()))
 	_built.add_child(_roof)
 	for p in [Vector3(-4, 3.6, -1), Vector3(5.5, 3.6, -3), Vector3(5.5, 3.6, 3)]:
 		var l := OmniLight3D.new()
@@ -314,7 +314,7 @@ func _trophy(id: String, pos: Vector3) -> void:
 	var spin := Spinner.new()
 	spin.speed = 0.8
 	spin.position = pos
-	spin.add_child(Mats.instance(k.commit()))
+	spin.add_child(Mats.instance(Assets.pick("trophies/" + id, k.commit())))
 	_built.add_child(spin)
 
 
@@ -391,7 +391,7 @@ func _furniture(id: String, pos: Vector3, body: StaticBody3D) -> void:
 			solid = Vector3(1.1, 1.0, 1.1)
 		_:
 			k.box(MeshKit.at(Vector3(0, 0.4, 0)), Vector3(0.8, 0.8, 0.8), c)
-	var mi := Mats.instance(k.commit())
+	var mi := Mats.instance(Assets.pick("furniture/" + id, k.commit()))
 	mi.position = pos
 	_built.add_child(mi)
 	if solid != Vector3.ZERO:

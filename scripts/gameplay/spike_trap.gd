@@ -17,14 +17,14 @@ func _ready() -> void:
 	for x in [-0.6, 0.0, 0.6]:
 		for z in [-0.6, 0.0, 0.6]:
 			k.box(MeshKit.at(Vector3(x, 0.075, z)), Vector3(0.16, 0.02, 0.16), Color(0.1, 0.1, 0.1))
-	add_child(Mats.instance(k.commit()))
+	add_child(Mats.instance(Assets.pick("props/spike_plate", k.commit())))
 	_spikes = Node3D.new()
 	add_child(_spikes)
 	var sk := MeshKit.new(9)
 	for x in [-0.6, 0.0, 0.6]:
 		for z in [-0.6, 0.0, 0.6]:
 			sk.cylinder(MeshKit.at(Vector3(x, 0.3, z)), 0.08, 0.0, 0.6, Color(0.75, 0.75, 0.78), 5)
-	_spikes.add_child(Mats.instance(sk.commit()))
+	_spikes.add_child(Mats.instance(Assets.pick("props/spikes", sk.commit())))
 	_spikes.position.y = -0.62
 
 

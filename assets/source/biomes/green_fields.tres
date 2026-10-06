@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="BiomeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/biome_def.gd" id="1_6oftp"]
+
+[resource]
+script = ExtResource("1_6oftp")
+id = "green_fields"
+display_name = "Green Fields"
+grass_a = Color(0.45, 0.72, 0.3, 1)
+grass_b = Color(0.55, 0.78, 0.32, 1)
+forest_floor = Color(0.3, 0.52, 0.24, 1)
+road = Color(0.66, 0.53, 0.36, 1)
+trail = Color(0.6, 0.5, 0.36, 1)
+plaza = Color(0.6, 0.53, 0.43, 1)
+field_a = Color(0.78, 0.68, 0.3, 1)
+field_b = Color(0.55, 0.45, 0.25, 1)
+sand = Color(0.86, 0.8, 0.58, 1)
+rock = Color(0.55, 0.53, 0.5, 1)
+cliff = Color(0.62, 0.5, 0.38, 1)
+water = Color(0.25, 0.55, 0.8, 0.8)
+hill_height = 15.0
+forest_coverage = 0.33
+terrace_strength = 0.45
+sky_top = Color(0.35, 0.6, 0.92, 1)
+sky_horizon = Color(0.75, 0.88, 0.98, 1)
+fog_color = Color(0.75, 0.86, 0.95, 1)
+sun_color = Color(1, 0.93, 0.8, 1)
+ambient = Color(0.6, 0.68, 0.8, 1)
+music = "green_fields_theme"
+weather = {
+"breezy": 2,
+"clear": 4,
+"drizzle": 1
+}
+tree_kinds = {
+"birch": 2,
+"oak": 5,
+"pine": 2
+}
+enemies = {
+"bandit": 2,
+"boar": 3
+}
+dungeon_enemies = {
+"bandit": 3,
+"rat": 4
+}
+village_personalities = {
+"cozy": 3,
+"goblin": 2,
+"wealthy": 2
+}
+hamlet_personalities = {
+"abandoned": 2,
+"bandit": 2,
+"cozy": 1,
+"farm": 3
+}
+packages = {
+"cursed": 1,
+"explosive": 1,
+"fragile": 3,
+"heavy": 3,
+"huge": 2,
+"living": 2,
+"magical": 2,
+"small": 6,
+"unstable": 2,
+"valuable": 1
+}
+events = {
+"bandit_ambush": 3,
+"broken_cart": 2,
+"lost_package": 3,
+"rival_courier": 2,
+"stranded_villager": 3,
+"traveling_merchant": 3
+}
+loot = {
+"gold": 60,
+"potion": 25,
+"trinket": 15
+}
+landmarks = Array[String](["standing_stones", "ruined_tower", "giant_tree"])
+dungeon_theme = {
+"accent": Color(0.33, 0.5, 0.26, 1),
+"ambient": Color(0.42, 0.38, 0.4, 1),
+"floor": Color(0.48, 0.47, 0.45, 1),
+"light": Color(1, 0.7, 0.4, 1),
+"wall": Color(0.4, 0.4, 0.43, 1)
+}
+secrets = Array[String](["cracked_wall_room", "landmark_cache"])

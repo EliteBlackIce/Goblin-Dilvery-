@@ -26,7 +26,7 @@ func _ready() -> void:
 	var k := MeshKit.new(3, 0.0)
 	k.sphere(Transform3D(), 1.0, Color.WHITE, 10, 7)
 	_ball = MeshInstance3D.new()
-	_ball.mesh = k.commit()
+	_ball.mesh = Assets.pick("fx/explosion_ball", k.commit())
 	_ball.material_override = Mats.color(Color(1.0, 0.65, 0.2), 3.0)
 	_ball.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_ball.scale = Vector3.ONE * 0.2

@@ -19,7 +19,7 @@ static func _ensure(tree: SceneTree) -> void:
 	if _puff_mesh == null:
 		var k := MeshKit.new(5, 0.0)
 		k.sphere(Transform3D(), 0.5, Color.WHITE, 6, 4)
-		_puff_mesh = k.commit()
+		_puff_mesh = Assets.pick("fx/puff", k.commit())
 
 
 static func _get_puff(tree: SceneTree) -> MeshInstance3D:

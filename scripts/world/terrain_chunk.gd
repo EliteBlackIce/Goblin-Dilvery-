@@ -224,7 +224,8 @@ func _build_vegetation(w: WorldData) -> void:
 			mm.set_instance_transform(i, list[i])
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
-		mmi.material_override = Mats.vertex()
+		if not Assets.is_custom(mm.mesh):
+			mmi.material_override = Mats.vertex()
 		mmi.visibility_range_end = VEG_RANGES.get(kind, 210.0)
 		if kind in ["grass", "flower_r", "flower_y", "flower_w", "mushroom"]:
 			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
